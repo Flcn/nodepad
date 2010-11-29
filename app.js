@@ -6,15 +6,14 @@
 var express = require('express'),
      app = module.exports = express.createServer(),
      mongoose = require('mongoose').Mongoose,
-     db = mongoose.connect('mongodb://localhost/nodepad'),
-     Document = require('./models.js').Document(db);
+     db,
+     Document;
 
 // Configuration
 
 app.configure(function(){
   app.set('views', __dirname + '/views');
   app.use(express.bodyDecoder());
-  app.use(express.logger());
   app.use(express.methodOverride());
   app.use(express.compiler({ src: __dirname + '/public', enable: ['less'] }));
   app.use(app.router);
@@ -22,13 +21,23 @@ app.configure(function(){
 });
 
 app.configure('development', function(){
+  app.use(express.logger({format : ':method :uri' }));
   app.use(express.errorHandler({ dumpExceptions: true, showStack: true })); 
+  db = mongoose.connect('mongodb://localhost/nodepad-development'); 
 });
 
 app.configure('production', function(){
+  app.use(express.logger());
   app.use(express.errorHandler()); 
+  db = mongoose.connect('mongodb://localhost/nodepad-production'); 
 });
 
+app.configure('test', function() {
+    app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
+    db = mongoose.connect('mongodb://localhost/nodepad-test'); 
+});
+
+app.Document = Document = require('./models.js').Document(db);
 
 
 exports.Document = function(db) {
